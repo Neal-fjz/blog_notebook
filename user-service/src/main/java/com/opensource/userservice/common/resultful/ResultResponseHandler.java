@@ -14,7 +14,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
  * @author: 风君子
  * 2022/03/03 18:29
  */
-@ControllerAdvice(basePackages = "com.erp.system")
+@ControllerAdvice(basePackages = "com.opensource.userservice.sys.controller")
 public class ResultResponseHandler implements ResponseBodyAdvice<Object> {
 
     // 是否支持 advice 功能,支持: true, 不支持: false
