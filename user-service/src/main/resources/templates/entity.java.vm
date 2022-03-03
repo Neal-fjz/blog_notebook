@@ -1,0 +1,225 @@
+package ${package.Entity};
+
+#foreach($pkg in ${table.importPackages})
+import ${pkg};
+#end
+#if(${swagger2})
+#end
+#if(${entityLombokModel})
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.opensource.userservice.common.group.GroupDelete;
+import com.opensource.userservice.common.group.GroupFind;
+import com.opensource.userservice.common.group.GroupInsert;
+import com.opensource.userservice.common.group.GroupUpdate;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.Accessors;
+import org.springframework.format.annotation.DateTimeFormat;
+
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
+#end
+
+/**
+ * <p>
+ * $!{table.comment}
+ * </p>
+ *
+ * @author ${author}
+ * @since ${date}
+ */
+#if(${entityLombokModel})
+@Data
+    #if(${superEntityClass})
+    @EqualsAndHashCode(callSuper = true)
+    #else
+    @EqualsAndHashCode(callSuper = false)
+    #end
+@Accessors(chain = true)
+#end
+#if(${table.convert})
+@TableName("${table.name}")
+#end
+#if(${swagger2})
+@ApiModel(value = "${entity}对象", description = "$!{table.comment}")
+#end
+#if(${superEntityClass})
+public class ${entity} extends ${superEntityClass}#if(${activeRecord})<${entity}>#end {
+#elseif(${activeRecord})
+public class ${entity} extends Model<${entity}> {
+#else
+public class ${entity} implements Serializable{
+#end
+
+#if(${entitySerialVersionUID})
+private static final long serialVersionUID=1L;
+#end
+#set($arr = [])
+## ----------  BEGIN 字段循环遍历  ----------
+#foreach($field in ${table.fields})
+
+    #if(${field.keyFlag})
+        #set($keyPropertyName=${field.propertyName})
+    #end
+    #if("$!field.comment" != "")
+        #if(${swagger2})
+        @ApiModelProperty(value = "${field.comment}")
+        #else
+        /**
+         * ${field.comment}
+         */
+        #end
+    #end
+    #if(${field.keyFlag})
+        ## 主键
+        #if(${field.keyIdentityFlag})
+        @TableId(value = "${field.name}", type = IdType.AUTO)
+        @NotNull(message = "修改时必须有 id", groups = {GroupDelete.class, GroupUpdate.class})
+        #elseif(!$null.isNull(${idType}) && "$!idType" != "")
+        @TableId(value = "${field.name}", type = IdType.${idType})
+        #elseif(${field.convert})
+        @TableId("${field.name}")
+        #end
+        ## 普通字段
+    #elseif(${field.fill})
+        ## -----   存在字段填充设置   -----
+        #if(${field.convert})
+        @TableField(value = "${field.name}", fill = FieldFill.${field.fill})
+        #else
+        @TableField(fill = FieldFill.${field.fill})
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8") // 从数据库读出日期格式时，进行转换的规则
+        @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") // 接受从前端传入的日期格式，映射到java类日期属性的规则
+        #end
+    #elseif(${field.convert})
+    @TableField("${field.name}")
+    #end
+    ## 乐观锁注解
+    #if(${versionFieldName}==${field.name})
+    @Version
+    #end
+    ## 逻辑删除注解
+    #if(${logicDeleteFieldName}==${field.name})
+    @TableLogic
+    #end
+    ## 单位识别码注解,全部必须有单位识别码
+    #if("cp_code"==${field.name})
+    @NotNull(message = "必须有单位识别码", groups = {GroupInsert.class, GroupFind.class, GroupUpdate.class})
+    @Min(value = 0, message = "单位识别码不能小于 0", groups = {GroupInsert.class, GroupFind.class, GroupUpdate.class})
+    #end
+    ## 创建人的注解,自动填充
+    #if("create_by"==${field.name})
+    @TableField(fill = FieldFill.INSERT)
+    #end
+    ## 更新人的注解,自动填充
+    #if("update_by"==${field.name})
+    @TableField(fill = FieldFill.UPDATE)
+    #end
+private ${field.propertyType} ${field.propertyName};
+    #if(${field.comment.length()} > 0)
+        #if($!field.comment.indexOf("{") != -1 && $!field.comment.indexOf("}") != -1 && $!field.comment.indexOf(
+            ";") != -1 && $!field.comment.indexOf(",") != -1)
+            #set($object_str = $!field.comment.substring($!field.comment.indexOf("{") + 1,$!field.comment.indexOf("}")))
+            ## ----------  添加到数组  组合信息 ----------
+            #set($tmp = $arr.add($object_str+"~~"+${field.propertyName}+"~"+$field.propertyType+"~"+$field.name))
+        #end
+    #end
+#end
+## ----------  生成常量  ----------
+#foreach($comment_element_space in $!{arr})
+    ## ----------  分离常量 与 配置  ----------
+    #set($comment_element_join = $!{comment_element_space.replace(" ","").split("~~")})
+    ## ----------  常量  ----------
+    #set($comment_element_list = $!comment_element_join.get(0))
+    ## ----------  配置  ----------
+    #set($comment_element_last = $!comment_element_join.get(1))
+    ## ----------  拆分配置  ----------
+    #set($comment_element_arr = $!{comment_element_last.split("~")})
+    #set($propertyName = $!comment_element_arr.get(0))
+    #set($propertyType = $!comment_element_arr.get(1))
+    #set($fieldName = $!comment_element_arr.get(2))
+    ## ----------  拆分常量  ----------
+    #set($element_list = $!comment_element_list.split(";"))
+    #foreach($comment_element in $!{element_list})
+        #set($firstName = $!comment_element.substring(0,$!comment_element.indexOf(":")))
+        #set($firstIndex = $!comment_element.indexOf(":") + 1)
+        #set($lastIndex = $!comment_element.indexOf(":") + 2)
+        #set($meanIndex = $!comment_element.indexOf(",") + 1)
+        ## 常量值
+        #set($lastName = $!comment_element.substring($firstIndex,$lastIndex))
+        ## 常亮注释
+        #set($meanName = $!comment_element.substring($meanIndex,$!comment_element.length()))
+
+    /**
+     * ${propertyName}：${meanName}
+     */
+    public final static ${propertyType} $!fieldName.toUpperCase()_$!firstName.toUpperCase() = ${lastName};
+    #end
+#end
+## ----------  END 字段循环遍历  ----------
+
+#if(!${entityLombokModel})
+    #foreach($field in ${table.fields})
+        #if(${field.propertyType.equals("boolean")})
+            #set($getprefix="is")
+        #else
+            #set($getprefix="get")
+        #end
+    public ${field.propertyType} ${getprefix}${field.capitalName}(){
+            return ${field.propertyName};
+            }
+
+        #if(${entityBuilderModel})
+        public ${entity} set${field.capitalName}(${field.propertyType} ${field.propertyName}){
+        #else
+        public void set${field.capitalName}(${field.propertyType} ${field.propertyName}) {
+        #end
+            this.${field.propertyName} = ${field.propertyName};
+        #if(${entityBuilderModel})
+                return this;
+        #end
+            }
+    #end
+    ## --foreach end---
+#end
+## --end of #if(!${entityLombokModel})--
+
+#if(${entityColumnConstant})
+    #foreach($field in ${table.fields})
+    public static final String ${field.name.toUpperCase()} ="${field.name}";
+
+    #end
+#end
+#if(${activeRecord})
+@Override
+protected Serializable pkVal(){
+    #if(${keyPropertyName})
+            return this.${keyPropertyName};
+    #else
+            return null;
+    #end
+        }
+
+#end
+#if(!${entityLombokModel})
+@Override
+public String toString(){
+        return"${entity}{" +
+    #foreach($field in ${table.fields})
+        #if($!{foreach.index}==0)
+                "${field.propertyName}=" + ${field.propertyName} +
+        #else
+                ", ${field.propertyName}=" + ${field.propertyName} +
+        #end
+    #end
+        "}";
+        }
+#end
+// 当前页码, 约定默认为 1
+@TableField(exist = false)
+private Integer current;
+
+// 每页数量 约定默认为 20
+@TableField(exist = false)
+private Integer pageSize;
+        }

@@ -1,0 +1,124 @@
+package ${package.Controller};
+
+import ${package.Service}.${table.serviceName};
+import ${package.Entity}.${entity};
+
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.opensource.userservice.common.group.GroupDelete;
+import com.opensource.userservice.common.group.GroupFind;
+import com.opensource.userservice.common.group.GroupInsert;
+import com.opensource.userservice.common.group.GroupUpdate;
+import org.aspectj.apache.bcel.classfile.Code;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+
+import com.opensource.userservice.common.resultful.CodeEnum;
+import com.opensource.userservice.common.exception.FailException;
+
+import javax.annotation.Resource;
+import java.util.List;
+
+/**
+ * @description ${table.entityPath}前端控制器  RestController注解
+ *
+ * @author ${author}
+ * @since ${date}
+ */
+@RestController
+@RequestMapping("/${table.name}")
+public class ${entity}Controller {
+    @Resource
+    private ${table.serviceName} ${table.entityPath}Service;
+
+    /**
+     * 1.0 mybatis-plus Generator自动生成 保存--单条创建
+     * 请求方式: POST
+     * @param ${table.entityPath} 接受对象
+     * @return CodeEnum 返回枚举
+     */
+    @PostMapping("/save")
+    public CodeEnum save(@RequestBody @Validated({GroupInsert.class}) ${entity} ${table.entityPath}){
+        boolean success = ${table.entityPath}Service.save( ${table.entityPath});
+        if (success) {
+            return CodeEnum.SAVE_SUCCESS;
+        }
+        throw new FailException(CodeEnum.SAVE_FAIL);
+    }
+
+    /**
+    * 2.0 mybatis-plus Generator自动生成  删除--单条逻辑删除
+    * 请求方式: POST
+    * @return CodeEnum 返回枚举
+    */
+    @PostMapping("delete_one")
+    public CodeEnum deleteOne(@RequestBody @Validated({GroupDelete.class}) ${entity} ${table.entityPath}){
+        boolean success = ${table.entityPath}Service.removeById(${table.entityPath}.getId());
+        if (success) {
+            return CodeEnum.DELETE_ONE_SUCCESS;
+        }
+        throw new FailException(CodeEnum.DELETE_ONE_FAIL);
+    }
+
+    /**
+   * 3.0 mybatis-plus Generator自动生成 删除--批量逻辑删除
+   * 请求方式: POST
+   * @param ids Long 类型 List 集合
+   * @return CodeEnum 返回枚举
+   */
+    @PostMapping("remove_batch")
+    public CodeEnum deleteBatch(@RequestBody List<Integer> ids){
+        if (ids != null && ids.isEmpty()) {
+            boolean success = ${table.entityPath}Service.removeByIds(ids);
+            if (success) {
+                return CodeEnum.DELETE_LOT_SUCCESS;
+            }
+            throw new FailException(CodeEnum.DELETE_LOT_FAIL);
+        }
+        throw new FailException(CodeEnum.NON_MEMBER);
+    }
+
+    /**
+     * 4.0 mybatis-plus Generator自动生成 更新--单条修改
+     * 请求方式: POST
+     * @param ${table.entityPath} 修改对象
+     * @return CodeEnum 返回枚举
+     */
+    @PostMapping("/update/one")
+    public CodeEnum update(@RequestBody @Validated({GroupUpdate.class}) ${entity} ${table.entityPath}) {
+        boolean flag = ${table.entityPath}Service.updateById(${table.entityPath});
+        if (flag) {
+            return CodeEnum.UPDATE_SUCCESS;
+        }
+        throw new FailException(CodeEnum.UPDATE_FAIL);
+    }
+
+    /**
+     * 5.0. mybatis-plus Generator自动生成 查询--单条
+     * 请求方式: GET
+     * @param ${table.entityPath} 查询对象
+     * @return ${entity} 返回对象
+     */
+    @GetMapping("query_one")
+    public ${entity} queryOne(@ModelAttribute @Validated({GroupFind.class}) ${entity} ${table.entityPath}) {
+        return ${table.entityPath}Service.getById(${table.entityPath}.getId());
+    }
+
+    /**
+     * 6.0 mybatis-plus Generator自动生成 查询--根据条件查询列表 根据是否分页返回不同的明细
+     * @param ${table.entityPath} 查询对象
+     * @return List 返回列表
+     */
+    @GetMapping("query_by_condition")
+    public Object queryByCondition(@ModelAttribute @Validated({GroupFind.class}) ${entity} ${table.entityPath}) {
+        QueryWrapper<${entity}> queryWrapper = new QueryWrapper<>();
+        queryWrapper.lambda().eq(${entity}::getCpCode,${table.entityPath}.getCpCode());
+        if (${table.entityPath}.getPageSize() != null){
+            Page<${entity}> page = new Page<>(${table.entityPath}.getCurrent(), ${table.entityPath}.getPageSize());
+                ${table.entityPath}Service.page(page, queryWrapper);
+            return page;
+        } else{
+            return ${table.entityPath}Service.list(queryWrapper);
+        }
+    }
+}
